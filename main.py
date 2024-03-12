@@ -6,10 +6,10 @@ from forms.user import RegisterForm, LoginForm
 from data.news import News
 from data.users import User
 from data import db_session
-# from werkzeug.utils import secure_filename
-# import os
-# import playsound
-# from pygame import mixer
+
+import os
+import playsound
+from pygame import mixer
 
 
 app = Flask(__name__)
@@ -24,10 +24,6 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-# def allowed_file(filename):
-#     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'mp3'
-
-
 # @app.route("/cokokie_test")
 # def cookie_test():
 #     visit_count = int(request.cookies.get("visit_count", 0))
@@ -35,12 +31,12 @@ def load_user(user_id):
 #     res.set_cookie("visit_count", str(visit_count + 1), max_age=60 * 60 * 24 * 365)
 #     return res
 
-
-@app.route("/session_test")
-def session_test():
-    visit_count = session.get("visit_count", 0)
-    session["visit_count"] = visit_count + 1
-    return f"Посещено раз: {visit_count + 1}"
+#
+# @app.route("/session_test")
+# def session_test():
+#     visit_count = session.get("visit_count", 0)
+#     session["visit_count"] = visit_count + 1
+#     return f"Посещено раз: {visit_count + 1}"
 
 
 @app.route("/")
@@ -94,50 +90,40 @@ def login():
 @app.route("/logout", methods=['GET', 'POST'])
 @login_required
 def logout():
-    session.clear()
-    return redirect('/')
+    logout_user()
+    return redirect("/")
 
 
-@app.route('/news',  methods=['GET', 'POST'])
+@app.route('/news', methods=['GET', 'POST'])
 @login_required
 def add_music():
     form = NewsForm()
     if form.validate_on_submit():
         a = request.form['file']
         print(a)
-        db_sess = db_session.create_session()
-        news = News()
-        news.title = a
-        news.content = form.content.data
-        news.is_private = form.is_private.data
-        current_user.news.append(news)
-        db_sess.merge(current_user)
-        db_sess.commit()
-        return redirect('/')
+        if a:
+            db_sess = db_session.create_session()
+            news = News()
+            news.title = a
+            news.content = form.content.data
+            news.is_private = form.is_private.data
+            current_user.news.append(news)
+            db_sess.merge(current_user)
+            db_sess.commit()
+            return redirect('/')
+        else:
+            return render_template('news.html', title='Добавление песни', form=form,
+                                   message="Загрузите песню")
     return render_template('news.html', title='Добавление песни', form=form)
 
 
-@app.route('/music_play/<int:id>',  methods=['GET', 'POST'])
-@login_required
-def music_play(id):
-    # name = os.path.abspath('music.mp3')  # надо достать имя из бд
-    # # mixer.music.load(name)
-    # # mixer.music.play()
-    # # mp3 = v.MediaPlayer(name)
-    # # mp3.play()
-    # print(name)
-    # # playsound.playsound(name)
-    # return redirect('/')
-    pass
-
-
-@app.route('/favorite',  methods=['GET', 'POST'])
+@app.route('/favorite', methods=['GET', 'POST'])
 @login_required
 def favorite():
     pass
 
 
-@app.route('/sleep',  methods=['GET', 'POST'])
+@app.route('/sleep', methods=['GET', 'POST'])
 @login_required
 def sleep():
     form = NewsForm()
