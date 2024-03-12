@@ -42,13 +42,14 @@
     </p>
     <p>
         {{ form.about.label }}<br>
-        {{ form.about(class="form-control") }}<br>
+        {{ form.about(class="form-control") }}
         {% for error in form.about.errors %}
             <p class="alert alert-danger" role="alert">
                 {{ error }}
             </p>
         {% endfor %}
     </p>
+    <font color="red"> После регистрации войдите в систему </font><br><br>
     <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
     {{message}}
 </form>

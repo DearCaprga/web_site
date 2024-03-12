@@ -4,7 +4,24 @@
     <h1>Добавление песни</h1>
     <form action="" method="post">
         {{ form.hidden_tag() }}
-        <p>
+<!--        <div class="form-group">-->
+<!--            <label>Выберите загружаемую песню<br></label>-->
+<!--            <input type="file" name="name_music" accept=".mp3"/>-->
+<!--        </div>-->
+<!--        <dl>-->
+<!--         <input type="file" name="file" accept=".mp3">-->
+<!--    </dl>-->
+<!--        <p>-->
+<!--            {{ form.file.label }}<br>-->
+<!--            {{ form.file(class=".form-control-file"}}<br>-->
+<!--            {% for error in form.file.errors %}-->
+<!--                <p content="alert alert-danger" role="alert"  >-->
+<!--                    {{ error }}-->
+<!--                </p>-->
+<!--            {% endfor %}-->
+<!--        </p>-->
+<!--                <p>{{ form.file(type="file", accept=".mp3", class=".form-control-file") }}</p>-->
+        <div>
             {{ form.title.label }}<br>
             {{ form.title(class="form-control") }}<br>
             {% for error in form.title.errors %}
@@ -12,8 +29,8 @@
                     {{ error }}
                 </p>
             {% endfor %}
-        </p>
-        <p>
+        </div>
+        <div>
             {{ form.content.label }}<br>
             {{ form.content(class="form-control") }}<br>
             {% for error in form.content.errors %}
@@ -21,9 +38,29 @@
                     {{ error }}
                 </p>
             {% endfor %}
-        </p>
+        </div>
         <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{ message }}
     </form>
 {% endblock %}
+<!--{% extends "base.html" %}-->
+
+<!--{% block content %}-->
+<!--    <h1>Добавление новости</h1>-->
+<!--    <form action="" method="post">-->
+<!--        {{ form.hidden_tag() }}-->
+<!--        <p>-->
+<!--            {{ form.title.label }}<br>-->
+<!--            {{ form.title(class="form-control") }}<br>-->
+<!--            {% for error in form.title.errors %}-->
+<!--                <p class="alert alert-danger" role="alert">-->
+<!--                    {{ error }}-->
+<!--                </p>-->
+<!--            {% endfor %}-->
+<!--        </p>-->
+<!--        <p>{{ form.is_private() }} {{ form.is_private.label }}</p>-->
+<!--        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>-->
+<!--        {{ message }}-->
+<!--    </form>-->
+<!--{% endblock %}-->
