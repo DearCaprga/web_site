@@ -6,10 +6,10 @@ from forms.user import RegisterForm, LoginForm
 from data.news import News
 from data.users import User
 from data import db_session
-from werkzeug.utils import secure_filename
-import os
-import playsound
-from pygame import mixer
+# from werkzeug.utils import secure_filename
+# import os
+# import playsound
+# from pygame import mixer
 
 
 app = Flask(__name__)
@@ -28,13 +28,28 @@ def load_user(user_id):
 #     return '.' in filename and filename.rsplit('.', 1)[1].lower() == 'mp3'
 
 
+# @app.route("/cokokie_test")
+# def cookie_test():
+#     visit_count = int(request.cookies.get("visit_count", 0))
+#     res = make_response(f"Посещенро раз: {visit_count + 1}")
+#     res.set_cookie("visit_count", str(visit_count + 1), max_age=60 * 60 * 24 * 365)
+#     return res
+
+
+@app.route("/session_test")
+def session_test():
+    visit_count = session.get("visit_count", 0)
+    session["visit_count"] = visit_count + 1
+    return f"Посещено раз: {visit_count + 1}"
+
+
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
-    if current_user.is_authenticated:
-       news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
-    else:
-        news = db_sess.query(News).filter(News.is_private != True)
+    # if current_user.is_authenticated:
+    #    news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
+    # else:
+    news = db_sess.query(News).filter(News.is_private != True)
     return render_template("index.html", news=news)
 
 
@@ -87,16 +102,13 @@ def logout():
 @login_required
 def add_music():
     form = NewsForm()
-    if form.validate_on_submit():  # добавить обработку на неправильный тип
-        # filename = secure_filename(file.filename)
-        # print(file.filename)
-        # file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
+    if form.validate_on_submit():
+        a = request.form['file']
+        print(a)
         db_sess = db_session.create_session()
         news = News()
-        news.title = form.title.data
-        # news.content = form.content.data
-        # print(form.file.name)
+        news.title = a
+        news.content = form.content.data
         news.is_private = form.is_private.data
         current_user.news.append(news)
         db_sess.merge(current_user)
@@ -115,17 +127,8 @@ def music_play(id):
     # # mp3.play()
     # print(name)
     # # playsound.playsound(name)
-    return redirect('/')
-# def stream_mp3(file_key):
-#     def generate():
-#         path = 'static/music.mp3'
-#         with open(path, 'rb') as fmp3:
-#             data = fmp3.read(1024)
-#             while data:
-#                 yield data
-#                 data = fmp3.read(1024)
-#
-#     return Response(generate(), mimetype="audio/mpeg3")
+    # return redirect('/')
+    pass
 
 
 @app.route('/favorite',  methods=['GET', 'POST'])
