@@ -5,7 +5,7 @@ from forms.news import NewsForm
 from forms.sleep import SleepForm
 from forms.user import RegisterForm, LoginForm
 from data.news import News
-from data.sleep import Sleep
+# from data.sleep import Sleep
 from data.users import User
 from data import db_session
 
