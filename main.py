@@ -2,14 +2,12 @@ from flask import Flask, flash, render_template, redirect, request, abort, make_
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from forms.news import NewsForm
+from forms.sleep import SleepForm
 from forms.user import RegisterForm, LoginForm
 from data.news import News
+from data.sleep import Sleep
 from data.users import User
 from data import db_session
-
-import os
-import playsound
-from pygame import mixer
 
 
 app = Flask(__name__)
@@ -126,7 +124,7 @@ def favorite():
 @app.route('/sleep', methods=['GET', 'POST'])
 @login_required
 def sleep():
-    form = NewsForm()
+    form = SleepForm()
     if form.validate_on_submit():
         # db_sess = db_session.create_session()
         # news = News()
@@ -165,6 +163,7 @@ def music_like(id):
     else:
         abort(404)
     return redirect('/')
+    pass
 
 
 def main():

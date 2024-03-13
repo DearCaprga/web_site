@@ -6,15 +6,6 @@
         {{ form.hidden_tag() }}
         <input type="file" name="file" accept=".mp3"><br>
         <p>
-            {{ form.title.label }}<br>
-            {{ form.title(class="form-control") }}<br>
-            {% for error in form.title.errors %}
-                <p class="alert alert-danger" role="alert">
-                    {{ error }}
-                </p>
-            {% endfor %}
-        </p>
-        <p>
             {{ form.content.label }}<br>
             {{ form.content(class="form-control") }}<br>
             {% for error in form.content.errors %}

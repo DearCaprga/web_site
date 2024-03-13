@@ -12,11 +12,11 @@
             <h2>{{ item.title }}</h2>
             <audio controls src="/static/{{item.title}}"> </audio>
 
-            <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
-
-            {% if current_user.is_authenticated and current_user == item.user %}
+            {% if current_user.is_authenticated %}
                     <a href="/music_delete/{{ item.id }}" class="btn btn-secondary">Delete</a>
+                <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
             {% endif %}
+
             <div>Исполнитель - {{ item.content }}</div>
             <div> Автор - {{ item.user.name }}, Дата добавления - {{ item.created_date }} </div>
         </div>
