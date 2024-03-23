@@ -5,10 +5,14 @@ from forms.news import NewsForm
 from forms.sleep import SleepForm
 from forms.user import RegisterForm, LoginForm
 from data.news import News
-# from data.sleep import Sleep
+from data.sleep import Sleep
+from data.like import Like
 from data.users import User
 from data import db_session
-
+from datetime import datetime
+import schedule
+import sqlite3
+import os
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -22,19 +26,10 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-# @app.route("/cokokie_test")
-# def cookie_test():
-#     visit_count = int(request.cookies.get("visit_count", 0))
-#     res = make_response(f"Посещенро раз: {visit_count + 1}")
-#     res.set_cookie("visit_count", str(visit_count + 1), max_age=60 * 60 * 24 * 365)
-#     return res
-
-#
-# @app.route("/session_test")
-# def session_test():
-#     visit_count = session.get("visit_count", 0)
-#     session["visit_count"] = visit_count + 1
-#     return f"Посещено раз: {visit_count + 1}"
+def silence():
+    print(90000)
+    return render_template("in_bed.html")
+    # pass
 
 
 @app.route("/")
@@ -43,7 +38,23 @@ def index():
     # if current_user.is_authenticated:
     #    news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
     # else:
+
+    # тут достаем время из базы данных
+    # надо обновлять страницу, проверяя сколько время
+    con = sqlite3.connect("db/blogs.db")
+    cur = con.cursor()
+    result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
+    print(result[0])
+    con.close()
+    silence()
     news = db_sess.query(News).filter(News.is_private != True)
+    # schedule.every().day.at(result[0]).do(silence)
+    # schedule.every().day.at("13:56").do(silence)
+    now = str(datetime.time(datetime.now())).split(":")
+    print(now[0] + ':' + now[1], 'now')
+    if (now[0] + ':' + now[1]) == "14:27":
+        print("Yes")
+        silence()
     return render_template("index.html", news=news)
 
 
@@ -115,55 +126,49 @@ def add_music():
     return render_template('news.html', title='Добавление песни', form=form)
 
 
+@app.route('/sleep', methods=['GET', 'POST'])
+@login_required
+def sleep():  # занести в бд
+    form = SleepForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        sleep = Sleep()
+        sleep.switch_on = form.switch_on.data
+        print(form.switch_on.data)
+        # current_user.news.append(sleep)
+        db_sess.merge(current_user)
+        db_sess.commit()
+        return redirect('/')
+    return render_template('sleep.html', title='Таймер сна', form=form)
+
+
 @app.route('/favorite', methods=['GET', 'POST'])
 @login_required
 def favorite():
     pass
 
 
-@app.route('/sleep', methods=['GET', 'POST'])
-@login_required
-def sleep():
-    form = SleepForm()
-    if form.validate_on_submit():
-        # db_sess = db_session.create_session()
-        # news = News()
-        # news.title = form.title.data
-        # news.content = form.content.data
-        # news.is_private = form.is_private.data
-        # current_user.news.append(news)
-        # db_sess.merge(current_user)
-        # db_sess.commit()
-        return redirect('/')
-    return render_template('sleep.html', title='Таймер сна', form=form)
-
-
 @app.route('/music_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
-def music_delete(id):
+def music_delete(id):  # пользователь может удолять не только свои добавленные песни
     db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.id == id,
-                                      News.user == current_user).first()
-    if news:
-        db_sess.delete(news)
-        db_sess.commit()
-    else:
-        abort(404)
+    db_sess.delete(db_sess.query(News).first())
+    db_sess.commit()
     return redirect('/')
 
 
+# пока не работает
 @app.route('/music_like/<int:id>', methods=['GET', 'POST'])
 @login_required
 def music_like(id):
     db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-    if news:
-        # добавлять песни в избранное
-        db_sess.commit()
-    else:
-        abort(404)
+    like = Like()
+    like.like = db_sess.query(News).first()
+    current_user.like.append(like)
+    db_sess.merge(current_user)
+    db_sess.commit()
     return redirect('/')
-    pass
+    # pass
 
 
 def main():
