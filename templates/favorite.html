@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Любимое</h1>
+    <a href="/" class="btn btn-dark">назад</a>
+    {% for item in like %}
+        <div class="col-md6 border rounded" >
+            <h2>{{ item.like }}</h2>
+            <audio controls src="/static/{{item.like}}" loop="loop"> </audio>
+        </div>
+    {% endfor %}
+{% endblock %}
+

@@ -1,4 +1,4 @@
-from flask import Flask, flash, render_template, redirect, request, abort, make_response, Response, session
+from flask import Flask, flash, render_template, redirect, request, make_response, Response, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from forms.news import NewsForm
@@ -23,12 +23,27 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
+TIME = '00:00'
 
 
 @login_manager.user_loader
 def load_user(user_id):
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
+
+
+def convert_to_binary_data(filename):
+    # Преобразование данных в двоичный формат
+    with open(filename, 'rb') as file:
+        blob_data = file.read()
+    return blob_data
+
+
+def write_to_file(data, filename):
+    # Преобразование двоичных данных в нужный формат
+    with open(filename, 'wb') as file:
+        file.write(data)
+    print("Данный из blob сохранены в: ", filename, "\n")
 
 
 # def silence():
@@ -44,7 +59,7 @@ def silence():
     print('Alive')
     # return render_template("in_bed.html")
     # window.location.reload()
-    return render_template("in_bed.html")
+    # return render_template("in_bed.html")
 
 
 scheduler = BackgroundScheduler()
@@ -63,12 +78,12 @@ def index():
     # else:
 
     # тут достаем время из базы данных
-    # надо обновлять страницу, проверяя сколько время
-    con = sqlite3.connect("db/blogs.db")
-    cur = con.cursor()
-    result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
+    # con = sqlite3.connect("db/blogs.db")
+    # cur = con.cursor()
+    # добавить с определенным пользоваетем
+    # result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
     # print(result[0])
-    con.close()
+    # con.close()
     news = db_sess.query(News).filter(News.is_private != True)
     return render_template("index.html", news=news)
 
@@ -118,6 +133,7 @@ def logout():
     return redirect("/")
 
 
+# возможно должно добавляться аудио, а не название
 @app.route('/news', methods=['GET', 'POST'])
 @login_required
 def add_music():
@@ -129,6 +145,8 @@ def add_music():
             db_sess = db_session.create_session()
             news = News()
             news.title = a
+            # a = os.path.abspath(a)
+            # news.file = convert_to_binary_data(a)
             news.content = form.content.data
             news.is_private = form.is_private.data
             current_user.news.append(news)
@@ -141,6 +159,7 @@ def add_music():
     return render_template('news.html', title='Добавление песни', form=form)
 
 
+# не заносится в бд
 @app.route('/sleep', methods=['GET', 'POST'])
 @login_required
 def sleep():  # занести в бд
@@ -154,13 +173,29 @@ def sleep():  # занести в бд
         db_sess.merge(current_user)
         db_sess.commit()
         return redirect('/')
+        # db_sess = db_session.create_session()
+        #
+        # con = sqlite3.connect("db/blogs.db")
+        # cur = con.cursor()
+        # # result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
+        # g.user = current_user.get_id()
+        # print(g.user)
+        # db_sess.add(Sleep(switch_on=form.switch_on.data, user_id=g.user))
+        # cur.execute(f"""INSERT INTO sleep VALUES (?, ?, ?)""", (2, form.switch_on.data, g.user))
+        # con.close()
+        #
+        # db_sess.commit()
+        # return redirect('/')
     return render_template('sleep.html', title='Таймер сна', form=form)
 
 
+# нельзя удалить лайкнутые песни
 @app.route('/favorite', methods=['GET', 'POST'])
 @login_required
 def favorite():
-    pass
+    db_sess = db_session.create_session()
+    like = db_sess.query(Like).filter(Like.user == current_user)
+    return render_template('favorite.html', title='Любимое', like=like)
 
 
 @app.route('/music_delete/<int:id>', methods=['GET', 'POST'])
@@ -172,27 +207,20 @@ def music_delete(id):  # пользователь может удолять не
     return redirect('/')
 
 
-# пока не работает
 @app.route('/music_like/<int:id>', methods=['GET', 'POST'])
 @login_required
 def music_like(id):
     db_sess = db_session.create_session()
-    like = Like()
 
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
     result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
-    # print(Like(result[0], current_user))
-    print(current_user, result)
-    # db_sess.add(Like(like=result[0], user_id=current_user.split()[1]))
-    # cur.execute(f"""INSERT INTO like VALUES ({result[0]}, {current_user})""")
+    g.user = current_user.get_id()
+    print(g.user)
+    db_sess.add(Like(like=result, user_id=g.user))
+    cur.execute(f"""INSERT INTO like VALUES (?, ?, ?)""", (id, result, g.user))
     con.close()
 
-    data = Like()
-    data.like = result
-
-    # current_user.like.append(like)
-    # db_sess.merge(current_user)
     db_sess.commit()
     return redirect('/')
 
