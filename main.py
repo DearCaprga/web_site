@@ -13,6 +13,11 @@ from datetime import datetime
 import schedule
 import sqlite3
 import os
+from apscheduler.schedulers.background import BackgroundScheduler
+import time
+
+import atexit
+
 
 app = Flask(__name__)
 login_manager = LoginManager()
@@ -26,10 +31,28 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
+# def silence():
+#     print(90000)
+#     return redirect('/')
+#     # return render_template("in_bed.html")
+#     # pass
+
+
+# schedule.every().day.at("20:52").do(silence)
+# @app.route("/silence")
 def silence():
-    print(90000)
+    print('Alive')
+    # return render_template("in_bed.html")
+    # window.location.reload()
     return render_template("in_bed.html")
-    # pass
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=silence, trigger="interval", seconds=10)
+scheduler.start()
+
+# Shut down the scheduler when exiting the app
+atexit.register(lambda: scheduler.shutdown())
 
 
 @app.route("/")
@@ -44,17 +67,9 @@ def index():
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
     result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
-    print(result[0])
+    # print(result[0])
     con.close()
-    silence()
     news = db_sess.query(News).filter(News.is_private != True)
-    # schedule.every().day.at(result[0]).do(silence)
-    # schedule.every().day.at("13:56").do(silence)
-    now = str(datetime.time(datetime.now())).split(":")
-    print(now[0] + ':' + now[1], 'now')
-    if (now[0] + ':' + now[1]) == "14:27":
-        print("Yes")
-        silence()
     return render_template("index.html", news=news)
 
 
@@ -135,7 +150,7 @@ def sleep():  # занести в бд
         sleep = Sleep()
         sleep.switch_on = form.switch_on.data
         print(form.switch_on.data)
-        # current_user.news.append(sleep)
+        current_user.sleep.append(sleep)
         db_sess.merge(current_user)
         db_sess.commit()
         return redirect('/')
@@ -163,12 +178,23 @@ def music_delete(id):  # пользователь может удолять не
 def music_like(id):
     db_sess = db_session.create_session()
     like = Like()
-    like.like = db_sess.query(News).first()
-    current_user.like.append(like)
-    db_sess.merge(current_user)
+
+    con = sqlite3.connect("db/blogs.db")
+    cur = con.cursor()
+    result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
+    # print(Like(result[0], current_user))
+    print(current_user, result)
+    # db_sess.add(Like(like=result[0], user_id=current_user.split()[1]))
+    # cur.execute(f"""INSERT INTO like VALUES ({result[0]}, {current_user})""")
+    con.close()
+
+    data = Like()
+    data.like = result
+
+    # current_user.like.append(like)
+    # db_sess.merge(current_user)
     db_sess.commit()
     return redirect('/')
-    # pass
 
 
 def main():
@@ -178,3 +204,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+# while True:
+#     schedule.run_pending()
+
