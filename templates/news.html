@@ -14,7 +14,13 @@
                 </p>
             {% endfor %}
         </p>
-        <p>{{ form.is_private() }} {{ form.is_private.label }}</p>
+            <p>Выберите жанр:</p>
+            <p><input type="search" list="character" name="genre">
+                <datalist id="character">
+                   {% for item in sp_genre %}
+                    <option value="{{ item }}">{{ item }}</option>
+                    {% endfor %}
+               </datalist></p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{ message }}
     </form>

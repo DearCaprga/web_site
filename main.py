@@ -68,7 +68,7 @@ def index():
     # result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
     # print(result[0])
     # con.close()
-    news = db_sess.query(News).filter(News.is_private != True)
+    news = db_sess.query(News)
     return render_template("index.html", news=news)
 
 
@@ -122,6 +122,7 @@ def logout():
 @login_required
 def add_music():
     form = NewsForm()
+    sp_genre = ['классика', 'рок', 'кантри', 'фонк']
     if form.validate_on_submit():
         a = request.form['file']
         print(a)
@@ -131,8 +132,11 @@ def add_music():
             news.title = a
             # a = os.path.abspath(a)
             # news.file = convert_to_binary_data(a)
+
+            genre = request.form.get("genre")
+            print(genre)
+            news.genre = genre
             news.content = form.content.data
-            news.is_private = form.is_private.data
             current_user.news.append(news)
             db_sess.merge(current_user)
             db_sess.commit()
@@ -140,7 +144,7 @@ def add_music():
         else:
             return render_template('news.html', title='Добавление песни', form=form,
                                    message="Загрузите песню")
-    return render_template('news.html', title='Добавление песни', form=form)
+    return render_template('news.html', title='Добавление песни', form=form, sp_genre=sp_genre)
 
 
 @app.route('/sleep', methods=['GET', 'POST'])
