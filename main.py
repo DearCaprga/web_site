@@ -9,12 +9,9 @@ from data.sleep import Sleep
 from data.like import Like
 from data.users import User
 from data import db_session
-from datetime import datetime
-import schedule
 import sqlite3
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
-import time
 
 import atexit
 
@@ -46,28 +43,15 @@ def write_to_file(data, filename):
     print("Данный из blob сохранены в: ", filename, "\n")
 
 
-# def silence():
-#     print(90000)
-#     return redirect('/')
-#     # return render_template("in_bed.html")
-#     # pass
-
-
-# schedule.every().day.at("20:52").do(silence)
-# @app.route("/silence")
 def silence():
     print('Alive')
-    # return render_template("in_bed.html")
-    # window.location.reload()
     # return render_template("in_bed.html")
 
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=silence, trigger="interval", seconds=10)
 scheduler.start()
-
-# Shut down the scheduler when exiting the app
-atexit.register(lambda: scheduler.shutdown())
+atexit.register(lambda: scheduler.shutdown())  # Завершение работы sheduler
 
 
 @app.route("/")
@@ -159,33 +143,24 @@ def add_music():
     return render_template('news.html', title='Добавление песни', form=form)
 
 
-# не заносится в бд
 @app.route('/sleep', methods=['GET', 'POST'])
 @login_required
-def sleep():  # занести в бд
+def sleep():
     form = SleepForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        sleep = Sleep()
-        sleep.switch_on = form.switch_on.data
-        print(form.switch_on.data)
-        current_user.sleep.append(sleep)
-        db_sess.merge(current_user)
+
+        con = sqlite3.connect("db/blogs.db")
+        cur = con.cursor()
+        g.user = current_user.get_id()
+        print(g.user)
+        t = str(form.switch_on.data)
+        db_sess.add(Sleep(switch_on=t, user_id=g.user))
+        cur.execute(f"""INSERT INTO sleep (switch_on, user_id) VALUES (?, ?)""", (t, g.user))
+        con.close()
+
         db_sess.commit()
         return redirect('/')
-        # db_sess = db_session.create_session()
-        #
-        # con = sqlite3.connect("db/blogs.db")
-        # cur = con.cursor()
-        # # result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
-        # g.user = current_user.get_id()
-        # print(g.user)
-        # db_sess.add(Sleep(switch_on=form.switch_on.data, user_id=g.user))
-        # cur.execute(f"""INSERT INTO sleep VALUES (?, ?, ?)""", (2, form.switch_on.data, g.user))
-        # con.close()
-        #
-        # db_sess.commit()
-        # return redirect('/')
     return render_template('sleep.html', title='Таймер сна', form=form)
 
 
@@ -232,6 +207,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-# while True:
-#     schedule.run_pending()
 

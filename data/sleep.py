@@ -8,7 +8,7 @@ class Sleep(SqlAlchemyBase):
     __tablename__ = 'sleep'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    switch_on = sqlalchemy.Column(sqlalchemy.Time)
+    switch_on = sqlalchemy.Column(sqlalchemy.String)
     # created_date = sqlalchemy.Column(sqlalchemy.DateTime, default=datetime.datetime.now)
     user_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("users.id"))
     user = orm.relationship('User')
