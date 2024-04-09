@@ -7,6 +7,7 @@
         <div class="col-md6 border rounded" >
             <h2>{{ item.like }}</h2>
             <audio controls src="/static/{{item.like}}" loop="loop"> </audio>
+            <a href="/music_delete/{{ item.id }}/{{ 2 }}" class="btn btn-secondary">Delete</a>
         </div>
     {% endfor %}
 {% endblock %}

@@ -20,7 +20,6 @@ app = Flask(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
-TIME = '00:00'
 
 
 @login_manager.user_loader
@@ -48,26 +47,15 @@ def silence():
     # return render_template("in_bed.html")
 
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=silence, trigger="interval", seconds=10)
-scheduler.start()
-atexit.register(lambda: scheduler.shutdown())  # Завершение работы sheduler
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(func=silence, trigger="interval", seconds=10)
+# scheduler.start()
+# atexit.register(lambda: scheduler.shutdown())  # Завершение работы sheduler
 
 
 @app.route("/")
 def index():
     db_sess = db_session.create_session()
-    # if current_user.is_authenticated:
-    #    news = db_sess.query(News).filter((News.user == current_user) | (News.is_private != True))
-    # else:
-
-    # тут достаем время из базы данных
-    # con = sqlite3.connect("db/blogs.db")
-    # cur = con.cursor()
-    # добавить с определенным пользоваетем
-    # result = cur.execute("""SELECT switch_on FROM sleep WHERE user_id""").fetchone()
-    # print(result[0])
-    # con.close()
     news = db_sess.query(News)
     return render_template("index.html", news=news)
 
@@ -85,8 +73,7 @@ def reqister():
                                    message="Такой пользователь уже есть")
         user = User(
             name=form.name.data,
-            email=form.email.data,
-            about=form.about.data
+            email=form.email.data
         )
         user.set_password(form.password.data)
         db_sess.add(user)
@@ -127,20 +114,29 @@ def add_music():
         a = request.form['file']
         print(a)
         if a:
-            db_sess = db_session.create_session()
-            news = News()
-            news.title = a
-            # a = os.path.abspath(a)
-            # news.file = convert_to_binary_data(a)
+            con = sqlite3.connect("db/blogs.db")
+            cur = con.cursor()
+            result = cur.execute(f"""SELECT title FROM news""").fetchall()
+            con.close()
+            res = [i[0] for i in result]
+            if a not in res:  # для добавления уникальных песен
+                db_sess = db_session.create_session()
+                news = News()
+                news.title = a
+                # a = os.path.abspath(a)
+                # news.file = convert_to_binary_data(a)
 
-            genre = request.form.get("genre")
-            print(genre)
-            news.genre = genre
-            news.content = form.content.data
-            current_user.news.append(news)
-            db_sess.merge(current_user)
-            db_sess.commit()
-            return redirect('/')
+                genre = request.form.get("genre")
+                print(genre)
+                news.genre = genre
+                news.content = form.content.data
+                current_user.news.append(news)
+                db_sess.merge(current_user)
+                db_sess.commit()
+                return redirect('/')
+            else:
+                return render_template('news.html', title='Добавление песни', form=form,
+                                       message="Уже такая есть")
         else:
             return render_template('news.html', title='Добавление песни', form=form,
                                    message="Загрузите песню")
@@ -177,13 +173,14 @@ def favorite():
     return render_template('favorite.html', title='Любимое', like=like)
 
 
-@app.route('/music_delete/<int:id>', methods=['GET', 'POST'])
+@app.route('/music_delete/<int:id>/<int:name>', methods=['GET', 'POST'])
 @login_required
-def music_delete(id):  # пользователь может удолять не только свои добавленные песни
+def music_delete(id, name):
     db_sess = db_session.create_session()
-    db_sess.delete(db_sess.query(News).first())
+    lst = {1: News, 2: Like, '1': '', '2': 'favorite'}
+    db_sess.delete(db_sess.query(lst[name]).filter(lst[name].id == id).first())
     db_sess.commit()
-    return redirect('/')
+    return redirect(f'/{lst[str(name)]}')
 
 
 @app.route('/music_like/<int:id>', methods=['GET', 'POST'])
@@ -195,9 +192,13 @@ def music_like(id):
     cur = con.cursor()
     result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
     g.user = current_user.get_id()
-    print(g.user)
-    db_sess.add(Like(like=result, user_id=g.user))
-    cur.execute(f"""INSERT INTO like VALUES (?, ?, ?)""", (id, result, g.user))
+    result1 = cur.execute(f"""SELECT like FROM like WHERE user_id={g.user}""").fetchall()
+    res1 = [i[0] for i in result1]
+    print(res1)
+    if result not in res1:  # для добавления только уникальных песен
+        print(g.user)
+        db_sess.add(Like(like=result, user_id=g.user))
+        cur.execute(f"""INSERT INTO like (like, user_id) VALUES (?, ?)""", (result, g.user))
     con.close()
 
     db_sess.commit()

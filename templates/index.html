@@ -14,12 +14,10 @@
 
             {% if current_user.is_authenticated %}
                     <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
-                    <a href="/music_delete/{{ item.id }}" class="btn btn-secondary">Delete</a>
-
+                    <a href="/music_delete/{{ item.id }}/{{ 1 }}" class="btn btn-secondary">Delete</a>
             {% endif %}
 
             <div>Исполнитель - {{ item.content }}</div>
-            <div> Автор - {{ item.user.name }}, Дата добавления - {{ item.created_date }} </div>
         </div>
     {% endfor %}
 {% endblock %}
