@@ -28,20 +28,6 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-def convert_to_binary_data(filename):
-    # Преобразование данных в двоичный формат
-    with open(filename, 'rb') as file:
-        blob_data = file.read()
-    return blob_data
-
-
-def write_to_file(data, filename):
-    # Преобразование двоичных данных в нужный формат
-    with open(filename, 'wb') as file:
-        file.write(data)
-    print("Данный из blob сохранены в: ", filename, "\n")
-
-
 def silence():
     print('Alive')
     # return render_template("in_bed.html")
@@ -57,6 +43,7 @@ def silence():
 def index():
     db_sess = db_session.create_session()
     news = db_sess.query(News)
+
     return render_template("index.html", news=news)
 
 
@@ -78,7 +65,7 @@ def reqister():
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
-        return redirect('/')
+        return redirect('/login')
     return render_template('register.html', title='Регистрация', form=form)
 
 
@@ -104,7 +91,48 @@ def logout():
     return redirect("/")
 
 
-# возможно должно добавляться аудио, а не название
+@app.route('/recommendation', methods=['GET', 'POST'])
+@login_required
+def reccomendation():
+    con = sqlite3.connect("db/blogs.db")
+    cur = con.cursor()
+    g.user = current_user.get_id()
+
+    res_top_songs = cur.execute(f"""SELECT like FROM like""").fetchall()
+    res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
+    res_novelty = cur.execute(f"""SELECT * FROM news""").fetchall()
+
+    top_songs = {}
+    top_genre = {}
+    novelty = {}
+    # возможно надо занести в функцию
+    for i in res_top_songs:
+        val = i[0]
+        if val in top_songs.keys():
+            top_songs[val] = top_songs[val] + 1
+        else:
+            top_songs[val] = 1
+    for i in res_top_genres:
+        val = i[0]
+        if val in top_genre.keys():
+            top_genre[val] = top_genre[val] + 1
+        else:
+            top_genre[val] = 1
+    for i in res_novelty:
+        novelty[i[1]] = i[5]
+    # упростить в функцию
+    top_genre = dict(sorted(top_genre.items(), key=lambda x: x[1], reverse=True))
+    top_songs = dict(sorted(top_songs.items(), key=lambda x: x[1], reverse=True))
+    novelty = dict(sorted(novelty.items(), key=lambda x: x[1], reverse=True))
+    print(top_songs)
+    print(top_genre)
+    print(novelty)
+
+    con.close()
+
+    return render_template('index.html')
+
+
 @app.route('/news', methods=['GET', 'POST'])
 @login_required
 def add_music():
@@ -112,31 +140,33 @@ def add_music():
     sp_genre = ['классика', 'рок', 'кантри', 'фонк']
     if form.validate_on_submit():
         a = request.form['file']
+        genre = request.form.get("genre")
         print(a)
         if a:
-            con = sqlite3.connect("db/blogs.db")
-            cur = con.cursor()
-            result = cur.execute(f"""SELECT title FROM news""").fetchall()
-            con.close()
-            res = [i[0] for i in result]
-            if a not in res:  # для добавления уникальных песен
-                db_sess = db_session.create_session()
-                news = News()
-                news.title = a
-                # a = os.path.abspath(a)
-                # news.file = convert_to_binary_data(a)
+            if genre:
+                con = sqlite3.connect("db/blogs.db")
+                cur = con.cursor()
+                result = cur.execute(f"""SELECT title FROM news""").fetchall()
+                con.close()
+                res = [i[0] for i in result]
+                if a not in res:  # для добавления уникальных песен
+                    db_sess = db_session.create_session()
+                    news = News()
+                    news.title = a
 
-                genre = request.form.get("genre")
-                print(genre)
-                news.genre = genre
-                news.content = form.content.data
-                current_user.news.append(news)
-                db_sess.merge(current_user)
-                db_sess.commit()
-                return redirect('/')
+                    print(genre)
+                    news.genre = genre
+                    news.content = form.content.data
+                    current_user.news.append(news)
+                    db_sess.merge(current_user)
+                    db_sess.commit()
+                    return redirect('/')
+                else:
+                    return render_template('news.html', title='Добавление песни', form=form,
+                                           message="Уже такая есть")
             else:
                 return render_template('news.html', title='Добавление песни', form=form,
-                                       message="Уже такая есть")
+                                       message="Укажите жанр песни")
         else:
             return render_template('news.html', title='Добавление песни', form=form,
                                    message="Загрузите песню")
@@ -164,7 +194,6 @@ def sleep():
     return render_template('sleep.html', title='Таймер сна', form=form)
 
 
-# нельзя удалить лайкнутые песни
 @app.route('/favorite', methods=['GET', 'POST'])
 @login_required
 def favorite():
@@ -190,15 +219,16 @@ def music_like(id):
 
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
-    result = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
+    res_title = cur.execute(f"""SELECT title FROM news WHERE id={id}""").fetchone()[0]
+    res_genre = cur.execute(f"""SELECT genre FROM news WHERE id={id}""").fetchone()[0]
     g.user = current_user.get_id()
-    result1 = cur.execute(f"""SELECT like FROM like WHERE user_id={g.user}""").fetchall()
-    res1 = [i[0] for i in result1]
-    print(res1)
-    if result not in res1:  # для добавления только уникальных песен
+    res_like = cur.execute(f"""SELECT like FROM like WHERE user_id={g.user}""").fetchall()
+    res_lik = [i[0] for i in res_like]
+    print(res_lik, res_genre)
+    if res_title not in res_lik:  # для добавления только уникальных песен
         print(g.user)
-        db_sess.add(Like(like=result, user_id=g.user))
-        cur.execute(f"""INSERT INTO like (like, user_id) VALUES (?, ?)""", (result, g.user))
+        db_sess.add(Like(like=res_title, genre=res_genre, user_id=g.user))
+        cur.execute(f"""INSERT INTO like (like, genre, user_id) VALUES (?, ?, ?)""", (res_title, res_genre, g.user))
     con.close()
 
     db_sess.commit()

@@ -33,7 +33,7 @@
 
         {% endif %}
       </h2>
-<header>
+<!--<header>-->
 <!--    <nav class="navbar navbar-light bg-light">-->
 <!--        {% if current_user.is_authenticated %}-->
 <!--            <a class="navbar-brand" href="/logout">{{ current_user.name }}</a>-->
@@ -66,8 +66,9 @@
 
               {% if current_user.is_authenticated %}
                       <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
-                      <a href="/music_delete/{{ item.id }}" class="btn btn-secondary">Delete</a>
-
+                    {% if current_user.is_authenticated and current_user == item.user %}
+                        <a href="/music_delete/{{ item.id }}/{{1}}" class="btn btn-danger">Удалить</a>
+                    {% endif %}
               {% endif %}
 
             <div>Исполнитель - {{ item.content }}</div>
