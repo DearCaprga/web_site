@@ -33,6 +33,10 @@ def silence():
     # return render_template("in_bed.html")
 
 
+def sort_songs(name):
+    return dict(sorted(name.items(), key=lambda x: x[1], reverse=True))
+
+
 # scheduler = BackgroundScheduler()
 # scheduler.add_job(func=silence, trigger="interval", seconds=10)
 # scheduler.start()
@@ -93,18 +97,28 @@ def logout():
 
 @app.route('/recommendation', methods=['GET', 'POST'])
 @login_required
-def reccomendation():
+def novelty_other():
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
     g.user = current_user.get_id()
 
-    res_top_songs = cur.execute(f"""SELECT like FROM like""").fetchall()
+    res_top_songs = cur.execute("""SELECT like FROM like""").fetchall()
     res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
-    res_novelty = cur.execute(f"""SELECT * FROM news""").fetchall()
+    res_novelty_my = cur.execute(f"""SELECT * FROM news WHERE user_id={g.user}""").fetchall()
+    res_novelty_other = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user}""").fetchall()
+
+    # print(res_top_songs, end='\n')
+    # print(res_top_genres, end='\n')
+    # print(res_novelty_my, end='\n')
+    # print(res_novelty_other, end='\n')
 
     top_songs = {}
     top_genre = {}
-    novelty = {}
+    genre_rec = []
+    novelty_my = {}
+    novelty_other = {}
+    my_songs = []
+
     # возможно надо занести в функцию
     for i in res_top_songs:
         val = i[0]
@@ -118,16 +132,31 @@ def reccomendation():
             top_genre[val] = top_genre[val] + 1
         else:
             top_genre[val] = 1
-    for i in res_novelty:
-        novelty[i[1]] = i[5]
-    # упростить в функцию
-    top_genre = dict(sorted(top_genre.items(), key=lambda x: x[1], reverse=True))
-    top_songs = dict(sorted(top_songs.items(), key=lambda x: x[1], reverse=True))
-    novelty = dict(sorted(novelty.items(), key=lambda x: x[1], reverse=True))
-    print(top_songs)
-    print(top_genre)
-    print(novelty)
+    for i in res_novelty_my:
+        novelty_my[i[1]] = i[5]
+        my_songs.append(i[1])
+    for i in res_novelty_other:
+        novelty_other[i[1]] = i[5]
 
+    top_genre = sort_songs(top_genre)
+    top_songs = sort_songs(top_songs)
+    novelty_my = sort_songs(novelty_my)
+    novelty_other = sort_songs(novelty_other)
+
+    print(top_songs)  # здесь хранятся самые популярные песни
+    print(top_genre)  # самые любимые жанры отдельного пользователя
+    print(novelty_my)  # "новые" песни данного пользователя
+    print(novelty_other)
+    # "новые" песни всех остальных; хотя не факт, что выводить нужно отдельно, может быть лучше вместе с novelty_my
+    print(my_songs)  # песни, что загрузил данный пользователь
+
+    for i in top_genre.keys():
+        uiop = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user} AND genre='{i}'""").fetchall()
+        if uiop:
+            res = [i[1] for i in uiop]
+            genre_rec.append(res)
+
+    print(genre_rec)  # подборка индивидуальных рекомендаций на основе любимых жанров
     con.close()
 
     return render_template('index.html')
