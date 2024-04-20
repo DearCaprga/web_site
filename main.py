@@ -1,4 +1,4 @@
-from flask import Flask, flash, render_template, redirect, request, make_response, Response, g
+from flask import Flask, render_template, redirect, request, g
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from forms.news import NewsForm
@@ -10,10 +10,6 @@ from data.like import Like
 from data.users import User
 from data import db_session
 import sqlite3
-import os
-from apscheduler.schedulers.background import BackgroundScheduler
-
-import atexit
 
 
 app = Flask(__name__)
@@ -28,19 +24,8 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
-def silence():
-    print('Alive')
-    # return render_template("in_bed.html")
-
-
 def sort_songs(name):
     return dict(sorted(name.items(), key=lambda x: x[1], reverse=True))
-
-
-# scheduler = BackgroundScheduler()
-# scheduler.add_job(func=silence, trigger="interval", seconds=10)
-# scheduler.start()
-# atexit.register(lambda: scheduler.shutdown())  # Завершение работы sheduler
 
 
 @app.route("/")
@@ -48,9 +33,9 @@ def index():
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
     g.user = current_user.get_id()
+    res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
 
-    if g.user:
-        res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
+    if g.user and res_top_genres:
         top_genre = {}
         genre_rec = []
         # возможно надо занести в функцию
@@ -61,19 +46,18 @@ def index():
             else:
                 top_genre[val] = 1
         top_genre = sort_songs(top_genre)
-        print(top_genre)  # самые любимые жанры отдельного пользователя
+        # print(top_genre)  # самые любимые жанры отдельного пользователя
 
         for i in top_genre.keys():
             uiop = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user} AND genre='{i}'""").fetchall()
             if uiop:
-                res = [i[1] for i in uiop]
                 genre_rec += uiop
 
         # подборка индивидуальных рекомендаций на основе любимых жанров
-        con.close()
     else:
         genre_rec = cur.execute(f"""SELECT * FROM news""").fetchall()
-    print(genre_rec)
+    print(genre_rec + ['Рекомендации'])
+    con.close()
 
     return render_template("index.html", news=genre_rec)
 
@@ -191,43 +175,24 @@ def sleep():
 @login_required
 def favorite():
     db_sess = db_session.create_session()
-    like = db_sess.query(Like).filter(Like.user == current_user)
+    like = db_sess.query(Like).filter(Like.user == current_user).all()
     return render_template('favorite.html', title='Любимое', like=like)
 
 
 @app.route('/mine', methods=['GET', 'POST'])
 @login_required
 def mine():
-    con = sqlite3.connect("db/blogs.db")
-    cur = con.cursor()
-    g.user = current_user.get_id()
-
-    my_songs = []
-    res_novelty_my = cur.execute(f"""SELECT * FROM news WHERE user_id={g.user}""").fetchall()
-    for i in res_novelty_my:
-        my_songs.append(i[1])
-    print(my_songs)  # песни, что загрузил данный пользователь
-
-    con.close()
-    return render_template('shablon.html', spisok=my_songs, name='Мои песни')
+    db_sess = db_session.create_session()
+    mine = db_sess.query(News).filter(News.user == current_user).all()
+    return render_template('mine.html', mine=mine)
 
 
 @app.route('/novetly', methods=['GET', 'POST'])
 @login_required
 def novetly():
-    con = sqlite3.connect("db/blogs.db")
-    cur = con.cursor()
-    g.user = current_user.get_id()
-
-    res_novelty_other = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user}""").fetchall()
-    novelty_other = {}
-    for i in res_novelty_other:
-        novelty_other[i[1]] = i[5]
-    novelty_other = sort_songs(novelty_other)
-    print(novelty_other)
-
-    con.close()
-    return render_template('shablon.html', spisok=novelty_other, name='Новинки')
+    db_sess = db_session.create_session()
+    like = db_sess.query(News).filter(News.user != current_user)
+    return render_template('novetly.html', novetly=like)
 
 
 @app.route('/top', methods=['GET', 'POST'])
@@ -246,23 +211,22 @@ def top():
         else:
             top_songs[val] = 1
     top_songs = sort_songs(top_songs)
-    print(top_songs)  # здесь хранятся самые популярные песни
 
     con.close()
-    return render_template('shablon.html',
-                           spisok=top_songs.keys(), name='Топ песен', kol=[i for i in range(len(top_songs))])
+    return render_template('top.html', top=top_songs)
 
 
 @app.route('/music_delete/<int:id>/<int:name>', methods=['GET', 'POST'])
 @login_required
 def music_delete(id, name):
     db_sess = db_session.create_session()
-    lst = {1: News, 2: Like, '1': '', '2': 'favorite'}
+    lst = {1: News, 2: Like, '1': 'mine', '2': 'favorite'}
     db_sess.delete(db_sess.query(lst[name]).filter(lst[name].id == id).first())
     db_sess.commit()
     return redirect(f'/{lst[str(name)]}')
 
 
+# надо возвращаться туда, где было, а не на главную
 @app.route('/music_like/<int:id>', methods=['GET', 'POST'])
 @login_required
 def music_like(id):
@@ -275,7 +239,7 @@ def music_like(id):
     g.user = current_user.get_id()
     res_like = cur.execute(f"""SELECT like FROM like WHERE user_id={g.user}""").fetchall()
     res_lik = [i[0] for i in res_like]
-    print(res_lik, res_genre)
+    print(res_lik, res_genre, 'like')
     if res_title not in res_lik:  # для добавления только уникальных песен
         print(g.user)
         db_sess.add(Like(like=res_title, genre=res_genre, user_id=g.user))
@@ -283,6 +247,7 @@ def music_like(id):
     con.close()
 
     db_sess.commit()
+    # print(page, 'page')
     return redirect('/')
 
 

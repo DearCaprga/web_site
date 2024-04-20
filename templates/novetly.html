@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Новинки</h1> <br>
+<a href="/" class="btn btn-dark">назад</a> <br><br>
+
+    {% for item in novetly %}
+    <div class="col-md6 border rounded">
+        <h2>{{ item.title }}</h2>
+        <audio controls src="/static/{{item.title}}" loop="loop"></audio>
+        <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
+    </div>
+    {% endfor %}
+
+{% endblock %}
+

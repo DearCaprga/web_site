@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}<br>
+    <h1>Мои песни</h1>
+    <a href="/" class="btn btn-dark">назад</a>
+
+    {% if mine %}
+        {% for item in mine %}
+            <div class="col-md6 border rounded" >
+                <h2>{{ item.title }}</h2>
+                <audio controls src="/static/{{item.title}}" loop="loop"> </audio>
+                <a href="/music_delete/{{ item.id }}/{{ 1 }}" class="btn btn-secondary">Delete</a>
+                <a href="/music_like/{{ item.id }}" class="btn btn-danger">Like</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <br><br><h4>Вы пока ничего не загрузили</h4>
+    {% endif %}
+{% endblock %}
+

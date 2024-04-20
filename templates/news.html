@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Добавление песни</h1>
+    <h1>Добавление песни</h1> <br>
     <form action="" method="post">
         {{ form.hidden_tag() }}
-        <input type="file" name="file" accept=".mp3"><br>
+        <input type="file" name="file" accept=".mp3"><br><br>
         <p>
             {{ form.content.label }}<br>
             {{ form.content(class="form-control") }}<br>
