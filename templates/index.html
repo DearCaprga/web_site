@@ -7,20 +7,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-default bg-light">
-  <a class="navbar-brand" href="http://127.0.0.1:5000">WED MUSIC Charity</a>
+<nav class="navbar navbar-expand-lg navbar-default bg-light">
+  <a class="navbar-brand" href="/">WED MUSIC Charity</a>
 
   <div>
     <ul class="navbar-nav">
       <li class="active">
-        <a class="nav-link" href="http://127.0.0.1:5000">Главная </a>
+        <a class="nav-link" href="/">Главная </a>
       </li>
       <li>
-        <a class="nav-link" href="">О нас</a>
+        <a class="nav-link" href="/about_us">О нас</a>
       </li>
-      <li>
-        <a class="nav-link" href="">Обратная связь</a>
-      </li>
+        <a class="nav-link" href="/support">Обратная связь</a>
     </ul>
   </div>
 </nav>
@@ -38,31 +36,29 @@
 
         {% endif %}
       </h2>
-      <div class="row">
-        <div class="col-xs-12 col-sm-9 col-md-4 col-lg-4" style="background-color: #778899">Исполнители</div>
-        <div class="col-xs-12 col-sm-9 col-md-4 col-lg-4" style="background-color: #708090">Название</div>
-        <div class="col-xs-12 col-sm-9 col-md-4 col-lg-4" style="background-color: #778899">продолжительность</div>
-      </div>
+    <!--    цветная линия    -->
+    <div class="row" style="background-color: #778899">.</div>
       {% extends "base.html" %}
 
   {% block content %}
     <br>
-
       {% for item in news %}
-          <div class="col-md6 border rounded" >
-              <h2>{{ item[1] }}</h2>
-              <audio controls src="/static/{{item[1]}}" loop="loop"> </audio>
+          <div class="row border rounded" id="main_page">
+              <div class="col">
+                  <h3>{{ item[1] }}</h3>
+                  <audio controls src="/static/{{item[1]}}" loop="loop"> </audio>
+                  {% if current_user.is_authenticated %}
+                        <a href="/music_like/{{ item[0] }}" class="btn btn-danger">Like</a>
+                  {% endif %}
+              </div>
+               <div class="col"><br>Исполнитель - {{ item[3] }}, жанр - {{ item[2] }}<br>
+                Дата добавления - {{ item[5] }} </div>
 
-              {% if current_user.is_authenticated %}
-                      <a href="/music_like/{{ item[0] }}" class="btn btn-danger">Like</a>
-              {% if current_user.is_authenticated and current_user == item[-1] %}
-              <a href="/music_delete/{{ item[0] }}/{{1}}" class="btn btn-danger">Delite</a>
-                    {% endif %}
-              {% endif %}
-
-            <div>Исполнитель - {{ item[3] }}, жанр - {{ item[2] }}</div>
-            <div>Дата добавления - {{ item[5] }} </div>
         </div>
+        <style> #main_page{
+                width: 800px;
+                margin: 0 auto;}
+        </style>
     {% endfor %}
     {% endblock %}
 

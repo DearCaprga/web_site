@@ -5,7 +5,7 @@ from forms.news import NewsForm
 from forms.sleep import SleepForm
 from forms.user import RegisterForm, LoginForm
 from data.news import News
-from data.sleep import Sleep
+# from data.sleep import Sleep
 from data.like import Like
 from data.users import User
 from data import db_session
@@ -33,7 +33,9 @@ def index():
     con = sqlite3.connect("db/blogs.db")
     cur = con.cursor()
     g.user = current_user.get_id()
-    res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
+    res_top_genres = []
+    if g.user:
+        res_top_genres = cur.execute(f"""SELECT genre FROM like WHERE user_id={g.user}""").fetchall()
 
     if g.user and res_top_genres:
         top_genre = {}
@@ -46,17 +48,21 @@ def index():
             else:
                 top_genre[val] = 1
         top_genre = sort_songs(top_genre)
-        # print(top_genre)  # самые любимые жанры отдельного пользователя
+        print(top_genre, 'Жанр')  # самые любимые жанры отдельного пользователя
 
         for i in top_genre.keys():
             uiop = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user} AND genre='{i}'""").fetchall()
             if uiop:
                 genre_rec += uiop
-
-        # подборка индивидуальных рекомендаций на основе любимых жанров
+        print(genre_rec, "реки")
+        qwert = cur.execute(f"""SELECT * FROM news""").fetchall()
+        for i in qwert:
+            if i[2] not in top_genre.keys():
+                genre_rec.append(i)
+        print(genre_rec)
     else:
         genre_rec = cur.execute(f"""SELECT * FROM news""").fetchall()
-    print(genre_rec + ['Рекомендации'])
+    print(genre_rec)
     con.close()
 
     return render_template("index.html", news=genre_rec)
@@ -150,25 +156,25 @@ def add_music():
     return render_template('news.html', title='Добавление песни', form=form, sp_genre=sp_genre)
 
 
-@app.route('/sleep', methods=['GET', 'POST'])
-@login_required
-def sleep():
-    form = SleepForm()
-    if form.validate_on_submit():
-        db_sess = db_session.create_session()
-
-        con = sqlite3.connect("db/blogs.db")
-        cur = con.cursor()
-        g.user = current_user.get_id()
-        print(g.user)
-        t = str(form.switch_on.data)
-        db_sess.add(Sleep(switch_on=t, user_id=g.user))
-        cur.execute(f"""INSERT INTO sleep (switch_on, user_id) VALUES (?, ?)""", (t, g.user))
-        con.close()
-
-        db_sess.commit()
-        return redirect('/')
-    return render_template('sleep.html', title='Таймер сна', form=form)
+# @app.route('/sleep', methods=['GET', 'POST'])
+# @login_required
+# def sleep():
+#     form = SleepForm()
+#     if form.validate_on_submit():
+#         db_sess = db_session.create_session()
+#
+#         con = sqlite3.connect("db/blogs.db")
+#         cur = con.cursor()
+#         g.user = current_user.get_id()
+#         print(g.user)
+#         t = str(form.switch_on.data)
+#         db_sess.add(Sleep(switch_on=t, user_id=g.user))
+#         cur.execute(f"""INSERT INTO sleep (switch_on, user_id) VALUES (?, ?)""", (t, g.user))
+#         con.close()
+#
+#         db_sess.commit()
+#         return redirect('/')
+#     return render_template('sleep.html', title='Таймер сна', form=form)
 
 
 @app.route('/favorite', methods=['GET', 'POST'])
@@ -190,9 +196,13 @@ def mine():
 @app.route('/novetly', methods=['GET', 'POST'])
 @login_required
 def novetly():
-    db_sess = db_session.create_session()
-    like = db_sess.query(News).filter(News.user != current_user)
-    return render_template('novetly.html', novetly=like)
+    con = sqlite3.connect("db/blogs.db")
+    cur = con.cursor()
+    g.user = current_user.get_id()
+
+    res_novetly = cur.execute(f"""SELECT * FROM news WHERE user_id!={g.user}""").fetchall()[::-1]
+    print(res_novetly, g.user, 'new')
+    return render_template('novetly.html', novetly=res_novetly)
 
 
 @app.route('/top', methods=['GET', 'POST'])
@@ -249,6 +259,16 @@ def music_like(id):
     db_sess.commit()
     # print(page, 'page')
     return redirect('/')
+
+
+@app.route('/support', methods=['GET', 'POST'])
+def support():
+    return render_template('support.html')
+
+
+@app.route('/about_us', methods=['GET', 'POST'])
+def about_us():
+    return render_template('about_us.html')
 
 
 def main():
