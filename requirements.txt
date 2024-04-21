@@ -1,7 +1,5 @@
-altgraph
 certifi
 charset-normalizer
-click
 colorama
 contourpy
 cx-Freeze
@@ -12,19 +10,9 @@ fonttools
 idna
 kiwisolver
 lief
-matplotlib
-mouse
-numpy
 packaging
 pefile
-Pillow
-pygame
-pygame-menu
-pyinstaller
-pyinstaller-hooks-contrib
 pywin32-ctypes
-qt5-applications
-qt5-tools
 requests
 six
 typing_extensions
