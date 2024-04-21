@@ -1,17 +1,15 @@
 <nav class="navbar navbar-expand-lg navbar-default bg-light">
-  <a class="navbar-brand" href="http://127.0.0.1:5000">WED MUSIC Charity</a>
+  <a class="navbar-brand" href="/">WED MUSIC Charity</a>
 
   <div>
     <ul class="navbar-nav">
       <li class="active">
-        <a class="nav-link" href="http://127.0.0.1:5000">Главная </a>
+        <a class="nav-link" href="/">Главная </a>
       </li>
       <li>
-        <a class="nav-link" href="">О нас</a>
+        <a class="nav-link" href="/about_us">О нас</a>
       </li>
-      <li>
-        <a class="nav-link" href="">Обратная связь</a>
-      </li>
+        <a class="nav-link" href="/support">Обратная связь</a>
     </ul>
   </div>
 </nav>
@@ -20,12 +18,16 @@
 {% block content %}
     <h1>Любимое</h1>
     <a href="/" class="btn btn-dark">назад</a>
-    {% for item in like %}
-        <div class="col-md6 border rounded" >
-            <h2>{{ item.like }}</h2>
-            <audio controls src="/static/{{item.like}}" loop="loop"> </audio>
-            <a href="/music_delete/{{ item.id }}/{{ 2 }}" class="btn btn-secondary">Delete</a>
-        </div>
-    {% endfor %}
+    {% if like %}
+        {% for item in like %}
+            <div class="col-md6 border rounded" >
+                <h2>{{ item.like }}</h2>
+                <audio controls src="/static/{{item.like}}" loop="loop"> </audio>
+                <a href="/music_delete/{{ item.id }}/{{ 2 }}" class="btn btn-secondary">Delete</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <br><br><h4>Вам пока не понравилась ни одна песня</h4>
+    {% endif %}
 {% endblock %}
 

@@ -1,0 +1,31 @@
+<nav class="navbar navbar-expand-lg navbar-default bg-light">
+  <a class="navbar-brand" href="/">WED MUSIC Charity</a>
+
+  <div>
+    <ul class="navbar-nav">
+      <li class="active">
+        <a class="nav-link" href="/">Главная </a>
+      </li>
+      <li>
+        <a class="nav-link" href="/about_us">О нас</a>
+      </li>
+        <a class="nav-link" href="/support">Обратная связь</a>
+    </ul>
+  </div>
+</nav>
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Новинки</h1> <br>
+<a href="/" class="btn btn-dark">назад</a> <br><br>
+
+    {% for item in novetly %}
+    <div class="col-md6 border rounded">
+        <h2>{{ item[1] }}</h2>
+        <audio controls src="/static/{{item[1]}}" loop="loop"></audio>
+        <a href="/music_like/{{ item[0] }}" class="btn btn-danger">Like</a>
+    </div>
+    {% endfor %}
+
+{% endblock %}
+
